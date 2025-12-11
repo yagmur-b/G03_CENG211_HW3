@@ -1,5 +1,6 @@
 package core;
 
+import enums.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -8,7 +9,6 @@ import java.util.Random;
 
 interface ITerrainObject {}
 interface IHazard extends ITerrainObject {}
-enum Direction { UP, DOWN, LEFT, RIGHT }
 
 class Penguin implements ITerrainObject {
     String id;
@@ -165,7 +165,7 @@ public class IcyTerrain {
      * EGE'S MOVEMENT ENGINE
      * Slides an object (Penguin or Hazard) in a specific direction.
      */
-    public void moveObject(ITerrainObject obj, Direction dir) {
+    public void moveObject(ITerrainObject obj, Direction dir, int maxSteps) {
         // Find current position
         int currentRow = -1, currentCol = -1;
         
@@ -185,10 +185,11 @@ public class IcyTerrain {
 
         int nextRow = currentRow + getRowDelta(dir);
         int nextCol = currentCol + getColDelta(dir);
+        int stepsTaken = 0; // Step counter.
 
         // --- MOVEMENT LOOP ---
         // Proceed if no obstacle and not out of bounds
-        while (isValidPosition(nextRow, nextCol)) {
+        while (isValidPosition(nextRow, nextCol) && stepsTaken < maxSteps) {
             ITerrainObject target = getObjectAt(nextRow, nextCol);
 
             // 1. EMPTY SQUARE: Move
@@ -205,6 +206,9 @@ public class IcyTerrain {
                 // Calculate next step
                 nextRow += getRowDelta(dir);
                 nextCol += getColDelta(dir);
+
+                // Steps are counted.
+                stepsTaken++;
             } 
             // 2. IF FOOD: (Only Penguin can eat)
             else if (target instanceof Food) {
@@ -226,6 +230,7 @@ public class IcyTerrain {
                     currentCol = nextCol;
                     nextRow += getRowDelta(dir);
                     nextCol += getColDelta(dir);
+                    stepsTaken++;
                 }
             }
             // 3. IF OBSTACLE: Collision Handling
@@ -236,9 +241,14 @@ public class IcyTerrain {
         }
 
         // LOOP ENDED BUT STILL IN LOOP LOGIC -> MEANS FELL INTO WATER
-        if (!isValidPosition(nextRow, nextCol)) {
+        if (!isValidPosition(nextRow, nextCol) && stepsTaken < maxSteps) {
             handleFallingIntoWater(obj, currentRow, currentCol);
         }
+    }
+
+    // Helper method for chain reaction.
+    public void moveObject(ITerrainObject obj, Direction dir) {
+        moveObject(obj, dir, 100); // Defalut: Infinite (100) steps. 
     }
 
     // --- COLLISION MANAGER ---
@@ -269,7 +279,7 @@ public class IcyTerrain {
             else if (obstacle instanceof SeaLion) {
                 // Penguin bounces (Reverse direction), SeaLion moves forward
                 moveObject(obstacle, dir); // SeaLion forward
-                moveObject(p, getOppositeDirection(dir)); // Penguin bounces back
+                moveObject(p, dir.opposite()); // Penguin bounces back
             }
             else if (obstacle instanceof HoleInIce) {
                  // Penguin falls
@@ -316,10 +326,11 @@ public class IcyTerrain {
         if (d == Direction.RIGHT) return 1;
         return 0;
     }
-    private Direction getOppositeDirection(Direction d) {
-        if (d == Direction.UP) return Direction.DOWN;
-        if (d == Direction.DOWN) return Direction.UP;
-        if (d == Direction.LEFT) return Direction.RIGHT;
-        return Direction.LEFT;
-    }
+    
+    // --- Getters for External Access ---
+    public List<Penguin> getPenguins() { return penguins; }
+    public List<IHazard> getHazards() { return hazards; }
+    public List<Food> getFoods() { return foods; }
+    public int getRows() { return ROWS; }
+    public int getCols() { return COLS; }
 }
