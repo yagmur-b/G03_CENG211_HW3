@@ -248,7 +248,7 @@ public class IcyTerrain {
 
     // Helper method for chain reaction.
     public void moveObject(ITerrainObject obj, Direction dir) {
-        moveObject(obj, dir, 100); // Defalut: Infinite (100) steps. 
+        moveObject(obj, dir, 100); // Default: Infinite (100) steps. 
     }
 
     // --- COLLISION MANAGER ---
